@@ -1,4 +1,4 @@
-package com.zigurs.karlis.utils;
+package com.zigurs.karlis.utils.sort;
 
 import java.util.Collection;
 import java.util.Collections;

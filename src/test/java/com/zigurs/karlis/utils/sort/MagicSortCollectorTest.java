@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.zigurs.karlis.utils;
+package com.zigurs.karlis.utils.sort;
 
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
-public class MagicSortTest extends MagicSortTestCases {
+public class MagicSortCollectorTest extends MagicSortTestCases {
 
     protected <X> List<X> sortFunction(final Collection<? extends X> sourceToSort,
                                        final int limit,
                                        final Comparator<? super X> comparator) {
-        return MagicSort.sortAndLimit(sourceToSort, limit, comparator);
+        return sourceToSort.stream().collect(MagicSort.toList(limit, comparator));
     }
 
 }
