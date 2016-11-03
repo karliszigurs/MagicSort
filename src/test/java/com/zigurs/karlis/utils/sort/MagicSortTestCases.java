@@ -1,5 +1,7 @@
 /*
- * Copyright 2016 Karlis Zigurs
+ *                                     //
+ * Copyright 2016 Karlis Zigurs (http://zigurs.com)
+ *                                   //
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +40,7 @@ public abstract class MagicSortTestCases {
          * new top item for every visited entry. Worst case scenario from
          * O performance perspective.
          */
-        assertEquals(sortFunction(doubles, 10, Comparator.reverseOrder()).get(0), 999, 0.0);
+        assertEquals(999, sortFunction(doubles, 10, Comparator.reverseOrder()).get(0), 0.0);
     }
 
     @Test
@@ -54,7 +56,30 @@ public abstract class MagicSortTestCases {
          * Sorting already sorted list. After first N visits
          * all remaining items will be early-discarded.
          */
-        assertEquals(sortFunction(doubles, 10, Double::compareTo).get(0), 0.0, 0.0);
+        assertEquals(0.0, sortFunction(doubles, 10, Double::compareTo).get(0), 0.0);
+    }
+
+
+    @Test
+    public void sortSillySizedList() {
+        List<Double> doubles = new ArrayList<>();
+
+        doubles.add(null);
+
+        for (int i = 0; i < 10_000; i++)
+            doubles.add((double) i);
+
+        assertEquals(doubles.get(1), 0.0, 0.0);
+
+        Collections.shuffle(doubles);
+
+        assertEquals(0.0, sortFunction(doubles, 100_000, Double::compareTo).get(0), 0.0);
+    }
+
+    @Test
+    public void sortEmptyList() {
+        List<Double> doubles = new ArrayList<>();
+        assertTrue(sortFunction(doubles, 10, Double::compareTo).isEmpty());
     }
 
     @Test
@@ -245,6 +270,8 @@ public abstract class MagicSortTestCases {
         for (int i = 0; i < 100; i++)
             doubles.add(null);
 
+        assertEquals(100, doubles.size());
+
         Collections.shuffle(doubles);
 
         List<Double> result = sortFunction(doubles, 10, Double::compareTo);
@@ -304,7 +331,7 @@ public abstract class MagicSortTestCases {
         try {
             assertEquals(10, sortFunction(doubles, 10, comparator).size());
         } catch (IllegalArgumentException iae) {
-            // Expected, but only from TimSort impl.
+            // Expected from TimSort impl.
         }
     }
 

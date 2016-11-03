@@ -1,5 +1,7 @@
 /*
- * Copyright 2016 Karlis Zigurs
+ *                                     //
+ * Copyright 2016 Karlis Zigurs (http://zigurs.com)
+ *                                   //
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,95 +19,65 @@ package com.zigurs.karlis.utils.sort;
 
 import java.util.*;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
- * Purpose built sort discarding known beyond-the-cut elements early.
- * Trades the cost of manual insertion against the cost of having to sort whole array.
+ * Sort functions returning top (or bottom) n items from the provided source {@code Collection}.
  * <p>
- * Compares well to built in sort functions on smaller datasets (&lt;1000 elements), but
- * significantly outperforms built-in sort algorithms on larger datasets.
+ * Useful in cases where only a small subset from the available items is required
+ * (e.g. for user interaction) in a manner more efficient than JDK built-in sort
+ * operations.
+ * <p>
+ * The overall contract of the sort functions available here is to ignore {@code null} elements
+ * (e.g. any {@code null} elements in the source collection will be silently discarded) and allow
+ * repeat and equals elements.
  */
 public class MagicSort {
 
+    private MagicSort() {
+        // Not instantiable
+    }
+
     /**
-     * MagicSort function which delegates the sorting to likely more efficient
-     * internal sorting implementation for the given input size and desired
-     * results set size
+     * Catch-all sort function entry point which may or may not choose to use different sort
+     * implementation based on the size of {@code Collection} and number of items provided.
      *
-     * @param inputCollection collection to select elements from
-     * @param limitResultsTo  maximum size of generated ordered list, negative or 0 will return empty list
-     * @param comparator      comparator to use (or use Comparator.naturalOrder())
-     * @param <X>             type of objects to sort
-     * @return sorted list consisting of first (up to limitResultsTo) elements in specified comparator order
+     * @param inputCollection collection to sort and select results from
+     * @param limitResultsTo  maximum size of resulting ordered list
+     * @param comparator      comparator for the specified collection
+     * @param <X>             elements type
+     * @return list sorted in the provided comparator order containing up to {@code limitResultsTo} elements
      */
     public static <X> List<X> sortAndLimit(final Collection<? extends X> inputCollection,
                                            final int limitResultsTo,
                                            final Comparator<? super X> comparator) {
         Objects.requireNonNull(inputCollection);
-        Objects.requireNonNull(comparator);
 
-        // Keep consistent with the native API
-        if (limitResultsTo < 0)
-            throw new IllegalArgumentException(String.valueOf(limitResultsTo));
-
-        if (limitResultsTo < 1 || inputCollection.isEmpty())
-            return Collections.emptyList();
-
-        return sortAndLimitBSearch(inputCollection, limitResultsTo, comparator);
-    }
-
-    public static <X> List<X> sortAndLimitWithArray(final Collection<? extends X> inputCollection,
-                                                    final int limitResultsTo,
-                                                    final Comparator<? super X> comparator) {
-        Objects.requireNonNull(inputCollection);
-        Objects.requireNonNull(comparator);
-
-        // Keep consistent with the native API
-        if (limitResultsTo < 0)
-            throw new IllegalArgumentException(String.valueOf(limitResultsTo));
-
-        if (limitResultsTo < 1 || inputCollection.isEmpty())
-            return Collections.emptyList();
-
-        //noinspection unchecked
-        X[] array = (X[]) new Object[Math.min(inputCollection.size(), limitResultsTo)];
-
-        X lastEntry = null;
-        int populated = 0;
-
-        for (X entry : inputCollection) {
-            if (entry == null)
-                continue;
-
-            if (lastEntry == null) { //handle initial population
-                for (int pos = 0; pos < array.length; pos++) {
-                    if (array[pos] == null || comparator.compare(entry, array[pos]) < 0) {
-                        System.arraycopy(array, pos, array, pos + 1, array.length - (pos + 1));
-                        array[pos] = entry;
-                        break;
-                    }
-                }
-                populated++;
-                lastEntry = array[array.length - 1];
-            } else if (comparator.compare(entry, lastEntry) < 0) {
-                for (int pos = 0; pos < array.length; pos++) {
-                    if (comparator.compare(entry, array[pos]) < 0) {
-                        System.arraycopy(array, pos, array, pos + 1, array.length - (pos + 1));
-                        array[pos] = entry;
-                        break;
-                    }
-                }
-                lastEntry = array[array.length - 1];
-            }
+        /* If we are going to sort the whole array the native sort is
+         * far faster than brute force insertions I use for collections of
+         * any size.
+         */
+        if (limitResultsTo >= inputCollection.size() && inputCollection.size() > 1000) {
+            return inputCollection.stream()
+                    .filter(i -> i != null)
+                    .sorted()
+                    .collect(Collectors.toList());
+        } else {
+           return sortAndLimitBSearch(inputCollection, limitResultsTo, comparator);
         }
-
-        if (populated == limitResultsTo)
-            return Arrays.asList(array);
-        else
-            return Arrays.asList(Arrays.copyOfRange(array, 0, populated));
     }
 
-    public static <X> List<X> sortAndLimitBSearch(final Collection<? extends X> inputCollection,
+    /**
+     * Sort function using binary search on accumulating array to insert the elements
+     * it determines to be part of desired result set during sort and selection.
+     *
+     * @param inputCollection collection to sort and select results from
+     * @param limitResultsTo  maximum size of resulting ordered list
+     * @param comparator      comparator for the specified collection
+     * @param <X>             elements type
+     * @return list sorted in the provided comparator order containing up to {@code limitResultsTo} elements
+     */
+    private static <X> List<X> sortAndLimitBSearch(final Collection<? extends X> inputCollection,
                                                   final int limitResultsTo,
                                                   final Comparator<? super X> comparator) {
         Objects.requireNonNull(inputCollection);
@@ -128,7 +100,7 @@ public class MagicSort {
             if (entry == null)
                 continue;
 
-            if (lastEntry == null) { //handle initial population
+            if (lastEntry == null) {
                 for (int pos = 0; pos < array.length; pos++) {
                     if (array[pos] == null || comparator.compare(entry, array[pos]) < 0) {
                         System.arraycopy(array, pos, array, pos + 1, array.length - (pos + 1));
@@ -142,7 +114,7 @@ public class MagicSort {
             } else if (comparator.compare(entry, lastEntry) < 0) {
                 int insertionPoint = Arrays.binarySearch(array, entry, comparator);
 
-                // Catch bad comparators
+                // Catch bad comparators that lie.
                 if (insertionPoint == -(array.length + 1)) {
                     continue;
                 }
@@ -166,20 +138,20 @@ public class MagicSort {
     }
 
     /**
-     * Returns a {@code Collector} that accumulates the top n (as determined by natural {@code Comparator}
-     * encountered elements into a new sorted {@code List}.
+     * Returns a {@code Collector} that accumulates the top n {@code Comparable} (as determined
+     * by natural {@code Comparator}) encountered elements into a new sorted {@code List}.
      *
      * @param limitResultsTo number of top elements to accumulate
      * @param <T>            type
      * @return list of 0 to limitResultsTo elements sorted in natural order
      */
-    public static <T extends Comparable<T>> Collector<T, ?, List<T>> toListNaturalOrder(final int limitResultsTo) {
+    public static <T extends Comparable<T>> Collector<T, ?, List<T>> toList(final int limitResultsTo) {
         return toList(limitResultsTo, Comparator.naturalOrder());
     }
 
     /**
-     * Returns a {@code Collector} that accumulates the top n (as determined by natural reverse {@code Comparator}
-     * encountered elements into a new sorted {@code List}.
+     * Returns a {@code Collector} that accumulates the top n {@code Comparable} (as determined
+     * by natural reverse {@code Comparator}) encountered elements into a new sorted {@code List}.
      *
      * @param limitResultsTo number of top elements to accumulate
      * @param <T>            type
@@ -191,7 +163,7 @@ public class MagicSort {
 
     /**
      * Returns a {@code Collector} that accumulates the top n (as determined by the
-     * supplied {@code Comparator} encountered elements into a new sorted {@code List}.
+     * supplied {@code Comparator}) encountered elements into a new sorted {@code List}.
      *
      * @param limitResultsTo number of top elements to accumulate
      * @param comparator     comparator to use to determine top elements
@@ -205,14 +177,24 @@ public class MagicSort {
         if (limitResultsTo < 0)
             throw new IllegalArgumentException(String.valueOf(limitResultsTo));
 
-        if (limitResultsTo > 10_000)
+        /*
+         * This is an annoying one. As we can't bound the size of the target array by examining
+         * source collection size we have to put _some_ limit on (otherwise it's going to be an OOM
+         * on every instance creation if the limit is ... out there. Not to mention the
+         * efficiency of inserting into an array that size.
+         *
+         * If you read this you probably know what you are doing and a hat off
+         * to your dataset that justifies it. Ping me if you need help sorting it out.
+         *
+         * But for now you are going to get an exception.
+         */
+        if (limitResultsTo > 100_000)
             throw new IllegalArgumentException(
-                    String.format("Specified limit %d is unrealistic. Are you sure you know what you are doing?", limitResultsTo)
+                    String.format("Requested limit of %d is too large for reliable operation.", limitResultsTo)
             );
 
-        /* TODO: For testing. Replacing limit with an exception later on */
         return Collector.of(
-                () -> new MagicSortCollector<>(Math.min(limitResultsTo, 100_000), comparator),
+                () -> new MagicSortCollector<>(limitResultsTo, comparator),
                 MagicSortCollector::add,
                 MagicSortCollector::merge,
                 MagicSortCollector::toList
@@ -220,17 +202,22 @@ public class MagicSort {
     }
 
     /**
-     * Basic collector to perform top-n sorting.
+     * Basic collector to perform top-n sorting. Uses the same logic as the binary tree
+     * accumulator above, but wrapped in a stateful class to comply with {@link Collector}
+     * semantics.
      *
-     * @param <T> type
+     * @param <T> type of items to accumulate
      */
     private static class MagicSortCollector<T> {
 
+        /* Configuration */
         private final int limitResultsTo;
         private final Comparator<? super T> comparator;
 
+        /* Working array where results are accumulated */
         private final T[] array;
 
+        /* Working state tracking */
         private T lastEntry;
         private int populated;
 
@@ -242,11 +229,18 @@ public class MagicSort {
             array = (T[]) new Object[limitResultsTo];
         }
 
+        /*
+         * Handle accumulating new entries
+         */
         private void add(T entry) {
             if (entry == null || array.length == 0)
                 return;
 
-            if (lastEntry == null) { //handle initial population
+            if (lastEntry == null) {
+                /*
+                 * Populate until we fill the working array. Compare using the scan
+                 *
+                 */
                 for (int pos = 0; pos < array.length; pos++) {
                     if (array[pos] == null || comparator.compare(entry, array[pos]) < 0) {
                         System.arraycopy(array, pos, array, pos + 1, array.length - (pos + 1));
@@ -258,6 +252,13 @@ public class MagicSort {
                 lastEntry = array[array.length - 1];
 
             } else if (comparator.compare(entry, lastEntry) < 0) {
+                /*
+                 * And after filling the initial array start discarding new entries less than
+                 * the last element or inserting (and shifting existing set) them in their
+                 * rightful place.
+                 *
+                 * The early discard bit is the speedup here.
+                 */
                 int insertionPoint = Arrays.binarySearch(array, entry, comparator);
 
                 // Catch bad comparators. Yes, they exist...
@@ -276,6 +277,10 @@ public class MagicSort {
             }
         }
 
+        /*
+         * Handle joining multiple results together in case of
+         * parallel streams.
+         */
         private MagicSortCollector<T> merge(MagicSortCollector<T> right) {
             for (int i = 0; i < right.populated; i++)
                 add(right.array[i]);
@@ -283,6 +288,9 @@ public class MagicSort {
             return this;
         }
 
+        /*
+         * Finalizer to wrap the working array into list
+         */
         private List<T> toList() {
             if (populated == limitResultsTo)
                 return Arrays.asList(array);
