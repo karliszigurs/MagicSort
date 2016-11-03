@@ -51,7 +51,7 @@ public class MagicSort {
         if (limitResultsTo < 1 || inputCollection.isEmpty())
             return Collections.emptyList();
 
-        return sortAndLimitWithArrayAndBinarySearch(inputCollection, limitResultsTo, comparator);
+        return sortAndLimitBSearch(inputCollection, limitResultsTo, comparator);
     }
 
     public static <X> List<X> sortAndLimitWithArray(final Collection<? extends X> inputCollection,
@@ -66,7 +66,6 @@ public class MagicSort {
 
         if (limitResultsTo < 1 || inputCollection.isEmpty())
             return Collections.emptyList();
-
 
         //noinspection unchecked
         X[] array = (X[]) new Object[Math.min(inputCollection.size(), limitResultsTo)];
@@ -106,9 +105,9 @@ public class MagicSort {
             return Arrays.asList(Arrays.copyOfRange(array, 0, populated));
     }
 
-    public static <X> List<X> sortAndLimitWithArrayAndBinarySearch(final Collection<? extends X> inputCollection,
-                                                                   final int limitResultsTo,
-                                                                   final Comparator<? super X> comparator) {
+    public static <X> List<X> sortAndLimitBSearch(final Collection<? extends X> inputCollection,
+                                                  final int limitResultsTo,
+                                                  final Comparator<? super X> comparator) {
         Objects.requireNonNull(inputCollection);
         Objects.requireNonNull(comparator);
 
@@ -166,28 +165,65 @@ public class MagicSort {
             return Arrays.asList(Arrays.copyOfRange(array, 0, populated));
     }
 
+    /**
+     * Returns a {@code Collector} that accumulates the top n (as determined by natural {@code Comparator}
+     * encountered elements into a new sorted {@code List}.
+     *
+     * @param limitResultsTo number of top elements to accumulate
+     * @param <T>            type
+     * @return list of 0 to limitResultsTo elements sorted in natural order
+     */
     public static <T extends Comparable<T>> Collector<T, ?, List<T>> toListNaturalOrder(final int limitResultsTo) {
         return toList(limitResultsTo, Comparator.naturalOrder());
     }
 
+    /**
+     * Returns a {@code Collector} that accumulates the top n (as determined by natural reverse {@code Comparator}
+     * encountered elements into a new sorted {@code List}.
+     *
+     * @param limitResultsTo number of top elements to accumulate
+     * @param <T>            type
+     * @return list of 0 to limitResultsTo elements sorted in reversed natural order
+     */
     public static <T extends Comparable<T>> Collector<T, ?, List<T>> toListReverseOrder(final int limitResultsTo) {
         return toList(limitResultsTo, Comparator.reverseOrder());
     }
 
+    /**
+     * Returns a {@code Collector} that accumulates the top n (as determined by the
+     * supplied {@code Comparator} encountered elements into a new sorted {@code List}.
+     *
+     * @param limitResultsTo number of top elements to accumulate
+     * @param comparator     comparator to use to determine top elements
+     * @param <T>            type
+     * @return list of 0 to limitResultsTo elements sorted by the provided comparator
+     */
     public static <T> Collector<T, MagicSortCollector<T>, List<T>> toList(final int limitResultsTo,
                                                                           final Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator);
+
         if (limitResultsTo < 0)
             throw new IllegalArgumentException(String.valueOf(limitResultsTo));
 
+        if (limitResultsTo > 10_000)
+            throw new IllegalArgumentException(
+                    String.format("Specified limit %d is unrealistic. Are you sure you know what you are doing?", limitResultsTo)
+            );
+
+        /* TODO: For testing. Replacing limit with an exception later on */
         return Collector.of(
-                () -> new MagicSortCollector<>(limitResultsTo, comparator),
+                () -> new MagicSortCollector<>(Math.min(limitResultsTo, 100_000), comparator),
                 MagicSortCollector::add,
                 MagicSortCollector::merge,
                 MagicSortCollector::toList
         );
     }
 
+    /**
+     * Basic collector to perform top-n sorting.
+     *
+     * @param <T> type
+     */
     private static class MagicSortCollector<T> {
 
         private final int limitResultsTo;
@@ -202,14 +238,8 @@ public class MagicSort {
             this.limitResultsTo = limitResultsTo;
             this.comparator = comparator;
 
-            /*
-             * TODO - Can't limit the top limit as we don't know the input array size.
-             * Need to come up with a cunning resizing plan...
-             *
-             * Capping at arbitrary large, but feasible size for now.
-             */
             //noinspection unchecked
-            array = (T[]) new Object[Math.min(limitResultsTo, 100_000)];
+            array = (T[]) new Object[limitResultsTo];
         }
 
         private void add(T entry) {
@@ -231,9 +261,8 @@ public class MagicSort {
                 int insertionPoint = Arrays.binarySearch(array, entry, comparator);
 
                 // Catch bad comparators. Yes, they exist...
-                if (insertionPoint == -(array.length + 1)) {
+                if (insertionPoint == -(array.length + 1))
                     return;
-                }
 
                 int pos = insertionPoint;
 
@@ -249,8 +278,7 @@ public class MagicSort {
 
         private MagicSortCollector<T> merge(MagicSortCollector<T> right) {
             for (int i = 0; i < right.populated; i++)
-                if (right.array[i] != null)
-                    add(right.array[i]);
+                add(right.array[i]);
 
             return this;
         }

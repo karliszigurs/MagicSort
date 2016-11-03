@@ -104,7 +104,11 @@ public abstract class MagicSortTestCases {
         for (int i = 0; i < 10; i++)
             doubles.add((double) i);
 
-        assertEquals(10, sortFunction(doubles, Integer.MAX_VALUE, Double::compareTo).size());
+        try {
+            assertEquals(10, sortFunction(doubles, Integer.MAX_VALUE, Double::compareTo).size());
+        } catch (IllegalArgumentException e) {
+            //expected from collector implementations
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -336,5 +340,5 @@ public abstract class MagicSortTestCases {
      * The test cases assume that the nulls in the input will be ignored (e.g. sorting a
      * collection consisting of only null entries will result in empty list as a result).
      */
-    protected abstract <X> List<X> sortFunction(final Collection<? extends X> sourceToSort, final int limit, Comparator<? super X> comparator);
+    protected abstract <X> List<X> sortFunction(Collection<? extends X> sourceToSort, int limit, Comparator<? super X> comparator);
 }
