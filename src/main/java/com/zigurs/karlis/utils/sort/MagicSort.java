@@ -19,7 +19,6 @@ package com.zigurs.karlis.utils.sort;
 
 import java.util.*;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 /**
  * Sort functions returning top (or bottom) n items from the provided source {@code Collection}.
@@ -81,20 +80,7 @@ public class MagicSort {
     public static <X> List<X> sortAndLimit(final Collection<? extends X> inputCollection,
                                            final int limitResultsTo,
                                            final Comparator<? super X> comparator) {
-        Objects.requireNonNull(inputCollection);
-
-        /* If we are going to sort the whole array the native sort is
-         * far faster than brute force insertions I use for collections of
-         * any size.
-         */
-        if (limitResultsTo >= inputCollection.size() && inputCollection.size() > 1000) {
-            return inputCollection.stream()
-                    .filter(i -> i != null)
-                    .sorted()
-                    .collect(Collectors.toList());
-        } else {
-            return sortAndLimitBSearch(inputCollection, limitResultsTo, comparator);
-        }
+        return sortAndLimitBSearch(inputCollection, limitResultsTo, comparator);
     }
 
     /**
