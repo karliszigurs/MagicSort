@@ -39,8 +39,38 @@ public class MagicSort {
     }
 
     /**
+     * Catch-all sort function for {@code Comparable} object collections which may or
+     * may not choose to use different sort implementation based on the size of {@code Collection}
+     * and desired number of items requested.
+     *
+     * @param inputCollection collection to sort and select results from
+     * @param limitResultsTo  maximum number of results to return
+     * @param <X>             collection elements type
+     * @return up to first n elements from a list sorted by a natural comparator for the type
+     */
+    public static <X extends Comparable<X>> List<X> sortAndLimit(final Collection<? extends X> inputCollection,
+                                                                 final int limitResultsTo) {
+        return sortAndLimit(inputCollection, limitResultsTo, Comparator.naturalOrder());
+    }
+
+    /**
+     * Catch-all sort function for {@code Comparable} object collections which may or may not
+     * choose to use different sort implementation based on the size of {@code Collection}
+     * and desired number of items requested.
+     *
+     * @param inputCollection collection to sort and select results from
+     * @param limitResultsTo  maximum number of results to return
+     * @param <X>             collection elements type
+     * @return up to first n elements from a list sorted by a reverse natural comparator for the type
+     */
+    public static <X extends Comparable<X>> List<X> sortReverseAndLimit(final Collection<? extends X> inputCollection,
+                                                                        final int limitResultsTo) {
+        return sortAndLimit(inputCollection, limitResultsTo, Comparator.reverseOrder());
+    }
+
+    /**
      * Catch-all sort function entry point which may or may not choose to use different sort
-     * implementation based on the size of {@code Collection} and number of items provided.
+     * implementation based on the size of {@code Collection} and number of items requested.
      *
      * @param inputCollection collection to sort and select results from
      * @param limitResultsTo  maximum size of resulting ordered list
@@ -63,7 +93,7 @@ public class MagicSort {
                     .sorted()
                     .collect(Collectors.toList());
         } else {
-           return sortAndLimitBSearch(inputCollection, limitResultsTo, comparator);
+            return sortAndLimitBSearch(inputCollection, limitResultsTo, comparator);
         }
     }
 
@@ -78,8 +108,8 @@ public class MagicSort {
      * @return list sorted in the provided comparator order containing up to {@code limitResultsTo} elements
      */
     private static <X> List<X> sortAndLimitBSearch(final Collection<? extends X> inputCollection,
-                                                  final int limitResultsTo,
-                                                  final Comparator<? super X> comparator) {
+                                                   final int limitResultsTo,
+                                                   final Comparator<? super X> comparator) {
         Objects.requireNonNull(inputCollection);
         Objects.requireNonNull(comparator);
 

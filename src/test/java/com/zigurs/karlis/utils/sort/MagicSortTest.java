@@ -17,9 +17,14 @@
  */
 package com.zigurs.karlis.utils.sort;
 
+import org.junit.Test;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 public class MagicSortTest extends MagicSortTestCases {
 
@@ -29,4 +34,21 @@ public class MagicSortTest extends MagicSortTestCases {
         return MagicSort.sortAndLimit(sourceToSort, limit, comparator);
     }
 
+    @Test
+    public void testNaturalComparator() {
+        List<Double> doubles = new ArrayList<>();
+        for (int i = 0; i < 100; i++)
+            doubles.add((double) i);
+
+        assertEquals(0.0, MagicSort.sortAndLimit(doubles, 10).get(0), 0.0);
+    }
+
+    @Test
+    public void testReverseComparator() {
+        List<Double> doubles = new ArrayList<>();
+        for (int i = 0; i < 100; i++)
+            doubles.add((double) i);
+
+        assertEquals(99.0, MagicSort.sortReverseAndLimit(doubles, 10).get(0), 0.0);
+    }
 }
