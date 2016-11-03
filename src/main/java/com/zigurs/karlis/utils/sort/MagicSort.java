@@ -130,18 +130,17 @@ public class MagicSort {
             if (entry == null)
                 continue;
 
-            if (lastEntry == null) {
-                for (int pos = 0; pos < array.length; pos++) {
-                    if (array[pos] == null || comparator.compare(entry, array[pos]) < 0) {
-                        System.arraycopy(array, pos, array, pos + 1, array.length - (pos + 1));
-                        array[pos] = entry;
-                        break;
-                    }
+            if (populated < array.length) {
+
+                array[populated++] = entry;
+
+                if (populated == array.length) { // population finished, sort in-place and proceed with boundary checks
+                    Arrays.parallelSort(array, comparator);
+                    lastEntry = array[array.length - 1];
                 }
-                populated++;
-                lastEntry = array[array.length - 1];
 
             } else if (comparator.compare(entry, lastEntry) < 0) {
+
                 int insertionPoint = Arrays.binarySearch(array, entry, comparator);
 
                 // Catch bad comparators that lie.
@@ -158,13 +157,17 @@ public class MagicSort {
                 array[pos] = entry;
 
                 lastEntry = array[array.length - 1];
+
             }
         }
 
-        if (populated == limitResultsTo)
+        if (populated < array.length) { /* Special case - the working array is only partially filled and therefore still unsorted as well */
+            X[] subArray = Arrays.copyOfRange(array, 0, populated);
+            Arrays.parallelSort(subArray, comparator);
+            return Arrays.asList(subArray);
+        } else {
             return Arrays.asList(array);
-        else
-            return Arrays.asList(Arrays.copyOfRange(array, 0, populated));
+        }
     }
 
     /**
@@ -241,7 +244,6 @@ public class MagicSort {
     private static class MagicSortCollector<T> {
 
         /* Configuration */
-        private final int limitResultsTo;
         private final Comparator<? super T> comparator;
 
         /* Working array where results are accumulated */
@@ -252,7 +254,6 @@ public class MagicSort {
         private int populated;
 
         private MagicSortCollector(final int limitResultsTo, final Comparator<? super T> comparator) {
-            this.limitResultsTo = limitResultsTo;
             this.comparator = comparator;
 
             //noinspection unchecked
@@ -266,20 +267,14 @@ public class MagicSort {
             if (entry == null || array.length == 0)
                 return;
 
-            if (lastEntry == null) {
-                /*
-                 * Populate until we fill the working array. Compare using the scan
-                 *
-                 */
-                for (int pos = 0; pos < array.length; pos++) {
-                    if (array[pos] == null || comparator.compare(entry, array[pos]) < 0) {
-                        System.arraycopy(array, pos, array, pos + 1, array.length - (pos + 1));
-                        array[pos] = entry;
-                        break;
-                    }
+            if (populated < array.length) {
+
+                array[populated++] = entry;
+
+                if (populated == array.length) { // population finished, sort in-place and proceed with boundary checks
+                    Arrays.parallelSort(array, comparator);
+                    lastEntry = array[array.length - 1];
                 }
-                populated++;
-                lastEntry = array[array.length - 1];
 
             } else if (comparator.compare(entry, lastEntry) < 0) {
                 /*
@@ -322,10 +317,14 @@ public class MagicSort {
          * Finalizer to wrap the working array into list
          */
         private List<T> toList() {
-            if (populated == limitResultsTo)
+            /* Special case - the working array is only partially filled and therefore still unsorted as well */
+            if (populated < array.length) {
+                T[] subArray = Arrays.copyOfRange(array, 0, populated);
+                Arrays.parallelSort(subArray, comparator);
+                return Arrays.asList(subArray);
+            } else {
                 return Arrays.asList(array);
-            else
-                return Arrays.asList(Arrays.copyOfRange(array, 0, populated));
+            }
         }
     }
 }
