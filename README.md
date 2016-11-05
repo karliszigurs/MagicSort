@@ -49,14 +49,12 @@ Collections.shuffle(doubles);
 doubles.parallelStream().collect(MagicSort.toList(10)).forEach(System.out::println);
 ```
 
-## Use it in your project
+## Use it
 
 ```maven
-<dependency>
-    <groupId>com.zigurs.karlis.utils</groupId>
-    <artifactId>magicsort</artifactId>
-    <version>0.2</version>
-</dependency>
+<groupId>com.zigurs.karlis.utils</groupId>
+<artifactId>magicsort</artifactId>
+<version>0.2</version>
 ```
 
 ### Credits
