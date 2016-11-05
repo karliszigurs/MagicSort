@@ -15,7 +15,7 @@ Gotchas:
 - I don't plan to extend the code to cover primitive collections
 - My maths are rusty and I make no claims about O(x) performance
 
-## Simple use example
+### Simple use example
 
 ```java
 // Ten largest doubles in a list the JDK way
@@ -38,7 +38,7 @@ List<Double> topTenDoubles = MagicSort.sortReverseAndLimit(doubles, 10); // Abou
 
 In short - the larger the source collection is and the smaller count of top elements is desired (e.g. top 10 vs top 1000), the bigger the speedup. Speedups of over 100x have been observed in real-life datasets.
 
-## Streams support
+### Streams support
 
 ```java
 List<Double> doubles = new ArrayList<>();
@@ -49,7 +49,7 @@ Collections.shuffle(doubles);
 doubles.parallelStream().collect(MagicSort.toList(10)).forEach(System.out::println);
 ```
 
-## Use it
+### Use it
 
 ```maven
 <groupId>com.zigurs.karlis.utils</groupId>
