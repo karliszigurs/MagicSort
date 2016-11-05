@@ -32,7 +32,7 @@ List<Double> doubles = new ArrayList<>();
 for (double d = 0.0; d < 10_000_000.0; d += 1.0) doubles.add(d);
 Collections.shuffle(doubles);
 
-List<Double> topItems = MagicSort.sortReverseAndLimit(doubles, 10); // About 25 times faster
+List<Double> topTenDoubles = MagicSort.sortReverseAndLimit(doubles, 10); // About 25 times faster
 ```
 [Benchmarked](https://github.com/karliszigurs/MagicSortBenchmarks) speed improvements of about 5x-15x for various practically sized source collection / top n elements combinations ([full details](https://github.com/karliszigurs/MagicSortBenchmarks/blob/master/results/20161104-0.2-SNAPSHOT/summary.csv)).
 
@@ -41,9 +41,11 @@ In short - the larger the source collection is and the smaller count of top elem
 ## Streams support
 
 ```java
-List<Double> doubles = new ArrayList<>(); // Take a very very large list
+List<Double> doubles = new ArrayList<>();
 for (double d = 0.0; d < 1_000_000.0; d += 1.0) doubles.add(d);
-/* and find the top 10 entries spreading the work across available cpu cores */
+Collections.shuffle(doubles);
+
+/* and print the top 10 doubles spreading the work across all available cpu cores */
 doubles.parallelStream().collect(MagicSort.toList(10)).forEach(System.out::println);
 ```
 
