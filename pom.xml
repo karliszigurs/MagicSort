@@ -10,7 +10,7 @@
 
     <name>${project.groupId}:${project.artifactId}</name>
     <url>https://github.com/karliszigurs/MagicSort</url>
-    <description>Alternative sorting implementations.</description>
+    <description>Alternative sorting implementations</description>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -66,7 +66,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.6.0</version>
             </plugin>
 
             <plugin>
@@ -120,20 +120,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.pitest</groupId>
-                <artifactId>pitest-maven</artifactId>
-                <version>1.1.10</version>
-                <configuration>
-                    <targetClasses>
-                        <param>com.zigurs*</param>
-                    </targetClasses>
-                    <targetTests>
-                        <param>com.zigurs*</param>
-                    </targetTests>
-                </configuration>
             </plugin>
         </plugins>
     </build>
